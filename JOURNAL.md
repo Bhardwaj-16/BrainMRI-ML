@@ -15,7 +15,7 @@ Now thsi might all seems as just fluff/fancy ML terms but they are actually real
 For detecting anomailes our question is - what information in ththe image pixels actually helps distinguish glioma, meningioma, pituitary tumor, or no tumor?
 
 Okay so now lets briefly understand what each feature extraction method does?
-HOG - as I said before, it detects shapes and edges. 
+HOG - as I said before, it detects shapes and edges. Technically HOG represents local gradient magnitude and orientation distributions.
 What does this mean for us? Take a look at this
 ```
 Normal tissue
@@ -36,7 +36,7 @@ So, instead of 16,384 raw pixel values, we get something like(this isnt what we 
 "there are diagonal boundaries here"
 So inshort, HOG captures shape and edge information.
 
-GLCM detects texture. It looks at relationships between neighboring pixel intensities.
+GLCM detects texture. It looks at relationships between neighboring pixel intensities. It summarizes spatial relationships between gray level intensities.
 Example:
 ```
 Region A:
@@ -81,7 +81,8 @@ Something like:
        ↓
 maybe 500–2000 dimensions
 ```
-and all this by retaining 95% of the variance.
+and all this by retaining 95% of the variance.(The actual number depends on n_components setting)
+Also IMP: PCA must be fitted only on the training set or else it would causes data leakage.
 Inshort, dimensionality reduction. Many people hear this term when they're studying basic Data extraction for AI. I encountered this term in 9th Grade, when the AI Curriculum was first introduced.
 
 Lets go through the uses of dimensionality reduction quickly:
@@ -92,12 +93,12 @@ Lets go through the uses of dimensionality reduction quickly:
 AND THE MOST IMPORTANT THING, WHAT SI THIS PROJECT ALL ABOUT?
 The Ques: Which representation of brain MRI images provides the most useful information for classifying tumor types?
 
-| Representation | Accuracy |
-| -------------- | -------: |
-| Raw pixels     |      82% |
-| PCA            |      89% |
-| HOG            |      84% |
-| GLCM           |      78% |
-| HOG + GLCM     |      86% |
+| Representation | Accuracy(example) |  
+| -------------- | -------:          |	
+| Raw pixels     |      82%          |   
+| PCA            |      89%          |   Logistic Regression		    How far can raw visual information go?    
+| HOG            |      84%          |   SVM							How useful is shape information?
+| GLCM           |      78%          |   Random Forest   			    How useful is texture?
+| HOG + GLCM     |      86%          |   SVM							Does combining representations help?
 
 Then we're gonna also compare Classical Machine Learning vs CNNs.
