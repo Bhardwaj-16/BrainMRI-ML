@@ -11,10 +11,10 @@
 | Representation | Model               | Research Question                                                  |
 | -------------- | ------------------- | ------------------------------------------------------------------ |
 | Raw Pixels     | Logistic Regression | How far can raw visual information go?                             |
-| PCA            | Logistic Regression | Can dimensionality reduction improve the representation?           |
 | HOG            | SVM                 | How useful is shape information?                                   |
 | GLCM           | Random Forest       | How useful is texture information?                                 |
 | HOG + GLCM     | SVM                 | Does combining shape and texture improve classification?           |
+| PCA            | Logistic Regression | Can dimensionality reduction improve the representation?           |
 | CNN            | CNN                 | How does learned representation compare with handcrafted features? |
 
 ---
@@ -23,11 +23,11 @@
 
 | Representation | Model               | Accuracy | Precision | Recall | F1-Score |
 | -------------- | ------------------- | -------: | --------: | -----: | -------: |
-| Raw Pixels     | Logistic Regression |        — |         — |      — |        — |
-| PCA            | Logistic Regression |        — |         — |      — |        — |
+| Raw Pixels     | Logistic Regression |   0.8655 |    0.8639 | 0.8655 |   0.8641 |
 | HOG            | SVM                 |        — |         — |      — |        — |
 | GLCM           | Random Forest       |        — |         — |      — |        — |
 | HOG + GLCM     | SVM                 |        — |         — |      — |        — |
+| PCA            | Logistic Regression |        — |         — |      — |        — |
 | CNN            | CNN                 |        — |         — |      — |        — |
 ---
 

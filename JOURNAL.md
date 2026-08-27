@@ -11,7 +11,7 @@ GLCM(Gray Level Co occurence Matrix) detects texture
 HOG + GLCM
 PCA(Principal Component Analysis) does diensionality reduction.
 
-Now thsi might all seems as just fluff/fancy ML terms but they are actually really important and useful if we go deeper into detecting anomalies in Brain MRI scans.
+Now this might all seem as just fluff/fancy ML terms but they are actually really important and useful if we go deeper into detecting anomalies in Brain MRI scans.
 For detecting anomailes our question is - what information in ththe image pixels actually helps distinguish glioma, meningioma, pituitary tumor, or no tumor?
 
 Okay so now lets briefly understand what each feature extraction method does?
@@ -64,9 +64,9 @@ GLCM extracts things like:
 * Correlation
 * ASM
 
-Why GLCM help is because MRI tissues can have different texture/intensity patterns, and tumors can alter those patterns.
+Why GLCM helps is because MRI tissues can have different texture/intensity patterns, and tumors can alter those patterns.
 
-HOG + GLCM is somethign interesting. The idea is that shape alone may not be enough, and texture alone may not be enough. So we combine them both and can get a better discrimination.
+HOG + GLCM is something interesting. The idea is that shape alone may not be enough, and texture alone may not be enough. So we combine them both and can get a better discrimination.
 And we're gonna try to test the results experimentally by testing HOG only, GLCM only, and HOG + GLCM and draw inferences from the results.
 
 PCA is for compression. Its completely different from GLCM and HOG. PCA addresses a dimensionality problem.
@@ -90,7 +90,7 @@ Lets go through the uses of dimensionality reduction quickly:
 * Less redundancy
 * Can reduce overfitting(we have many features, Our model has a lot of opportunities to learn patterns that don't generalize. Reducing dimensionality can sometimes improve generalization.)
 
-AND THE MOST IMPORTANT THING, WHAT SI THIS PROJECT ALL ABOUT?
+AND THE MOST IMPORTANT THING, WHAT IS THIS PROJECT ALL ABOUT?
 The Ques: Which representation of brain MRI images provides the most useful information for classifying tumor types?
 
 | Representation | Accuracy(example) |  
