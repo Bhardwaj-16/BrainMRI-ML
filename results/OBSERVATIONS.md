@@ -43,7 +43,7 @@
 | GLCM           | Random Forest       |   0.8987 |    0.9003 | 0.8987 |   0.8976 | 7m2s(7m to Extract GLCM feat. 2s for training RF)|              4s |
 | HOG + GLCM     | SVM                 |   0.9645 |    0.9653 | 0.9645 |   0.9643 | 13min(10m[Feature extraction], 3m[Standardize feat + train]) |  1m |
 | PCA            | Logistic Regression |   0.8670 |    0.8649 | 0.8670 |   0.8656 | 8m(including PCA Feature extraction(6m)) |             ~0s |
-| CNN            | CNN                 |        — |         — |      — |        — |                                          |                 |
+| CNN            | CNN                 |   0.8345 |    0.8294 | 0.8345 |   0.8278 |                                      29m |              8m |
 ---
 
 # Observations
