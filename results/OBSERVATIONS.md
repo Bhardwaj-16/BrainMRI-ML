@@ -40,8 +40,8 @@
 | -------------- | ------------------- | -------: | --------: | -----: | -------: | ---------------------------------------: | --------------: |
 | Raw Pixels     | Logistic Regression |   0.8655 |    0.8639 | 0.8655 |   0.8641 |                                      58s |              2s |
 | HOG            | SVM                 |   0.9705 |    0.9710 | 0.9705 |   0.9704 |   3m(2m for feature extration + 1m training) |             44s |
-| GLCM           | Random Forest       |   0.8987 |    0.9003 | 0.8987 |   0.8976 |7m2s(7m to Extract GLCM feat. 2s for training RF)|              4s |
-| HOG + GLCM     | SVM                 |        — |         — |      — |        — |                                          |                 |
+| GLCM           | Random Forest       |   0.8987 |    0.9003 | 0.8987 |   0.8976 | 7m2s(7m to Extract GLCM feat. 2s for training RF)|              4s |
+| HOG + GLCM     | SVM                 |   0.9645 |    0.9653 | 0.9645 |   0.9643 | 13min(10m[Feature extraction], 3m[Standardize feat + train]) |  1m |
 | PCA            | Logistic Regression |   0.8670 |    0.8649 | 0.8670 |   0.8656 | 8m(including PCA Feature extraction(6m)) |             ~0s |
 | CNN            | CNN                 |        — |         — |      — |        — |                                          |                 |
 ---
