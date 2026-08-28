@@ -2,8 +2,23 @@
 
 ## Research Question
 
-**Which image representation provides the most useful information for classifying brain MRI tumor types using classical machine learning?**
+**Which image representation(along with an ML model) provides the most useful information for classifying brain MRI tumor types using classical machine learning?**
 
+| Parameter                | Value                                                      |
+| ------------------------ | ---------------------------------------------------------- |
+| **Dataset**              | Brain Tumor MRI Dataset — Masoud Nickparvar                |
+| **Total images**         | 7,023                                                      |
+| **Classes**              | 4                                                          |
+| **Classes**              | Glioma, Meningioma, No Tumor, Pituitary                    |
+| **Image size**           | Resized to 128 × 128                                       |
+| **Image representation** | Grayscale                                                  |
+| **Raw-pixel dimensions** | 16,384 pixels/image                                        |
+| **Dataset structure**    | Training / Testing                                         |
+| **Random seed**          | 42                                                         |
+| **Evaluation metrics**   | Accuracy, weighted Precision, weighted Recall, weighted F1 |
+| **Preprocessing**        | Grayscale conversion → resize → flatten                    |
+| **Model**                | Logistic Regression                                        |
+| **Max iterations**       | 1,000                                                      |
 ---
 
 ## Experiment Overview
@@ -21,14 +36,14 @@
 
 # Results
 
-| Representation | Model               | Accuracy | Precision | Recall | F1-Score |
-| -------------- | ------------------- | -------: | --------: | -----: | -------: |
-| Raw Pixels     | Logistic Regression |   0.8655 |    0.8639 | 0.8655 |   0.8641 |
-| HOG            | SVM                 |        — |         — |      — |        — |
-| GLCM           | Random Forest       |        — |         — |      — |        — |
-| HOG + GLCM     | SVM                 |        — |         — |      — |        — |
-| PCA            | Logistic Regression |        — |         — |      — |        — |
-| CNN            | CNN                 |        — |         — |      — |        — |
+| Representation | Model               | Accuracy | Precision | Recall | F1-Score | Training Time(Colab T4 GPU)              | Evaluation Time |
+| -------------- | ------------------- | -------: | --------: | -----: | -------: | ---------------------------------------: | --------------: |
+| Raw Pixels     | Logistic Regression |   0.8655 |    0.8639 | 0.8655 |   0.8641 |                                      58s |              2s |
+| HOG            | SVM                 |   0.9705 |    0.9710 | 0.9705 |   0.9704 |   3m(2m feature extration + 1m training) |             44s |
+| GLCM           | Random Forest       |        — |         — |      — |        — |                                          |                 |
+| HOG + GLCM     | SVM                 |        — |         — |      — |        — |                                          |                 |
+| PCA            | Logistic Regression |   0.8670 |    0.8649 | 0.8670 |   0.8656 | 8m(including PCA Feature extraction(6m)) |             ~0s |
+| CNN            | CNN                 |        — |         — |      — |        — |                                          |                 |
 ---
 
 # Observations
