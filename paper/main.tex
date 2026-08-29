@@ -1,0 +1,857 @@
+\documentclass[11pt,a4paper]{article}
+
+% ---------------------------------------------------------
+% Packages
+% ---------------------------------------------------------
+
+\usepackage[margin=1in]{geometry}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{multirow}
+\usepackage{array}
+\usepackage{float}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage{microtype}
+
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    citecolor=blue,
+    urlcolor=blue
+}
+
+% ---------------------------------------------------------
+% Title
+% ---------------------------------------------------------
+
+\title{
+    \textbf{Comparative Evaluation of Image Representations and Machine Learning Pipelines for Brain MRI Tumor Classification}
+}
+
+\author{
+    Bhardwaj Prasad Sutara\\
+    Independent Researcher, India\\
+    \texttt{bhardwaj.14.mit@gmail.com}
+}
+
+\date{\today}
+
+% ---------------------------------------------------------
+% Document
+% ---------------------------------------------------------
+
+\begin{document}
+
+\maketitle
+
+% ---------------------------------------------------------
+% Abstract
+% ---------------------------------------------------------
+
+\begin{abstract}
+
+Automated classification of brain magnetic resonance imaging (MRI) scans is an important problem in medical image analysis. Although modern deep learning methods can learn image representations directly from data, classical machine learning methods using \textbf{handcrafted features} remain attractive because of their relatively simple computational requirements and explicitly designed feature representations.
+
+This study evaluates several image representations and machine learning pipelines for four-class brain MRI classification: glioma, meningioma, no tumor, and pituitary tumor. A publicly available brain tumor MRI dataset containing 7,023 images was processed by converting images to grayscale and resizing them to $128 \times 128$ pixels. Five classical representations were investigated: raw pixel intensities, principal component analysis (PCA), histograms of oriented gradients (HOG), gray-level co-occurrence matrix (GLCM) texture features, and a combination of HOG and GLCM. These representations were paired with logistic regression, support vector machines (SVM), and random forests. A ResNet18-based convolutional neural network was additionally evaluated as a learned-representation baseline.
+
+Among the evaluated configurations, HOG combined with an SVM achieved the highest accuracy of 97.05\% and a weighted F1-score of 97.04\%. GLCM with random forests achieved 89.87\% accuracy, while raw pixels and PCA with logistic regression achieved 86.55\% and 86.70\%, respectively. Combining HOG and GLCM reduced accuracy to 96.45\%, indicating that the additional texture features did not improve performance in this experimental configuration. The evaluated ResNet18 model achieved 83.45\% accuracy and a weighted F1-score of 82.78\%.
+
+The results indicate that, for this dataset and experimental setup, HOG with an SVM provided the strongest predictive performance among the evaluated pipelines while requiring substantially less training time than the tested HOG--GLCM pipeline and ResNet18 configuration. These findings should not be interpreted as evidence that handcrafted features are generally superior to deep learning; rather, they demonstrate the relative performance of the specific pipelines evaluated in this study.
+
+\end{abstract}
+
+% ---------------------------------------------------------
+% Keywords
+% ---------------------------------------------------------
+
+\noindent
+\textbf{Keywords:}
+brain MRI, brain tumor classification, HOG, GLCM, SVM,
+classical machine learning, convolutional neural networks,
+medical image classification
+
+% ---------------------------------------------------------
+% 1. Introduction
+% ---------------------------------------------------------
+
+\section{Introduction}
+
+Brain tumors are abnormal growths of cells within the brain and represent an important problem in medical diagnosis. Magnetic resonance imaging (MRI) is widely used for visualizing brain structures and identifying abnormalities because it provides detailed information about soft tissue. Automated analysis of MRI scans has therefore become an active area of research in computer vision and medical image analysis.
+
+A central challenge in automated brain MRI analysis is the extraction of useful information from images. Traditional machine learning approaches generally require an explicit representation of the input image. Different representations emphasize different characteristics of an image. Raw pixel representations preserve the original intensity values, while handcrafted descriptors such as histograms of oriented gradients (HOG) emphasize local intensity changes and structural patterns. Texture descriptors such as gray-level co-occurrence matrix (GLCM) features capture statistical relationships between neighboring pixel intensities. Dimensionality reduction methods such as principal component analysis (PCA) provide another approach by transforming a high-dimensional representation into a lower-dimensional feature space.
+
+In contrast, convolutional neural networks (CNNs) learn hierarchical image representations directly from training data. Residual networks, such as ResNet, introduced residual learning to facilitate the training of deeper neural networks and have become widely used in image recognition tasks \cite{he2016deep}.
+
+Although deep learning methods are widely used for medical image classification, classical machine learning pipelines remain useful in settings where computational resources, training data, or model complexity are constrained. They can also provide a controlled environment for investigating which manually designed image characteristics contain useful information for a particular classification problem.
+
+This study investigates the following research question:
+
+\textbf{\begin{quote}
+\textit{How do different image representations and machine-learning pipelines affect the classification of brain MRI tumor types?}
+\end{quote}
+}
+
+Rather than treating the representation and classifier as independent variables, this work evaluates complete pipelines consisting of a representation paired with a classifier. The evaluated pipelines are:
+
+\begin{enumerate}
+    \item Raw grayscale pixels with logistic regression;
+    \item PCA-transformed pixels with logistic regression;
+    \item HOG features with an SVM;
+    \item GLCM texture features with a random forest;
+    \item HOG combined with GLCM features with an SVM; and
+    \item A ResNet18-based CNN as a learned-representation comparison.
+\end{enumerate}
+
+The primary objective is not to establish that one class of models is universally superior to another. Instead, the objective is to determine which of the evaluated pipelines provides the strongest empirical performance for this particular dataset and experimental configuration, while also considering computational cost.
+
+% ---------------------------------------------------------
+% 2. Related Work
+% ---------------------------------------------------------
+
+\section{Related Work}
+
+Image representation has historically played an important role in computer vision. Before the widespread adoption of deep neural networks, many visual recognition systems relied on manually designed descriptors that captured edges, gradients, texture, or local structure.
+
+Histograms of Oriented Gradients (HOG), introduced by Dalal and Triggs, represent local distributions of image-gradient orientations and were originally investigated for visual object detection \cite{dalal2005histograms}. HOG is particularly useful when object structure and local contours are important because it describes the distribution of edge orientations while providing a degree of robustness to local illumination changes.
+
+Texture-based image representations provide a complementary approach. Haralick, Shanmugam, and Dinstein introduced a family of statistical texture features based on gray-level spatial dependencies \cite{haralick1973textural}. Gray-level co-occurrence matrices (GLCMs) summarize the frequency of neighboring gray-level combinations and can be used to derive statistics such as contrast, correlation, energy, and homogeneity.
+
+Dimensionality reduction provides another method for dealing with high-dimensional image representations. Principal component analysis (PCA) transforms correlated variables into a smaller number of orthogonal components while preserving as much variance as possible \cite{jolliffe2002principal}. For image classification, PCA can reduce the dimensionality of raw pixel representations, potentially reducing computational cost and redundancy.
+
+Support vector machines (SVMs) are classical supervised learning models that construct decision boundaries in a feature space and can be effective for high-dimensional classification problems \cite{cortes1995support}. Random forests instead construct ensembles of decision trees using randomized feature selection and bootstrap sampling \cite{breiman2001random}. Logistic regression provides a comparatively simple linear baseline for multi-class classification.
+
+More recently, convolutional neural networks have become dominant in many image recognition applications because they learn feature representations jointly with the classification task. Residual networks address the optimization difficulties associated with increasing network depth by introducing residual learning connections \cite{he2016deep}. ResNet architectures have subsequently been applied across a wide range of image recognition problems.
+
+Brain tumor MRI classification has also been studied using both handcrafted features and deep learning approaches. The dataset used in this study is the Brain Tumor MRI Dataset curated by Masoud Nickparvar, which contains images belonging to four classes: glioma, meningioma, pituitary tumor, and no tumor \cite{nickparvar_dataset}. The dataset combines images originating from multiple publicly available brain MRI collections.
+
+The present study differs from a single-model classification study by explicitly comparing several image representations and their associated classical learning pipelines under the same experimental framework. The comparison focuses not only on predictive performance but also on the effect of combining structural and texture information and on the computational cost of the evaluated pipelines.
+
+% ---------------------------------------------------------
+% 3. Dataset
+% ---------------------------------------------------------
+
+\section{Dataset}
+
+The experiments use the publicly available Brain Tumor MRI Dataset curated by Masoud Nickparvar \cite{nickparvar_dataset}. The dataset contains MRI images divided into four classes:
+
+\begin{table}[H]
+\centering
+\caption{Class distribution in the evaluation set used for the reported experiments.}
+\label{tab:class_distribution}
+\begin{tabular}{lr}
+\toprule
+\textbf{Class} & \textbf{Images} \\
+\midrule
+Glioma & 300 \\
+Meningioma & 306 \\
+No tumor & 417 \\
+Pituitary & 300 \\
+\midrule
+\textbf{Total} & \textbf{1,323} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The dataset was supplied with a predefined split into \texttt{Training} and \texttt{Testing} directories. No programmatic train/test splitting was applied. All classifiers were trained using the designated training partition and evaluated using the designated testing partition.
+
+The experiments reported in this paper were performed using a training set of 5,700 images and an evaluation set of 1,323 images. The evaluation set contained 300 glioma images, 306 meningioma images, 417 no-tumor images, and 300 pituitary images.
+
+The current dataset directory contains 1,311 images in the testing directory because 12 no-tumor images that were present when the experiments were conducted are no longer present in that directory. The reported results are therefore based on the saved experimental outputs, classification reports, and confusion matrices generated at experiment time rather than on the current state of the dataset directory.
+
+% ---------------------------------------------------------
+% 4. Methodology
+% ---------------------------------------------------------
+
+\section{Methodology}
+
+The experimental pipeline consists of image preprocessing, feature representation, classification, and evaluation.
+
+All images were converted to grayscale and resized to $128 \times 128$ pixels for the classical machine-learning experiments. Depending on the experiment, the resulting images were either flattened into raw pixel vectors or transformed into handcrafted feature representations.
+
+The evaluated pipelines are summarized in Table~\ref{tab:pipelines}.
+
+\begin{table}[H]
+\centering
+\caption{Evaluated classification pipelines.}
+\label{tab:pipelines}
+\begin{tabular}{lll}
+\toprule
+\textbf{Representation} & \textbf{Model} & \textbf{Purpose} \\
+\midrule
+Raw pixels & Logistic Regression & Baseline \\
+PCA & Logistic Regression & Dimensionality reduction \\
+HOG & SVM & Structural information \\
+GLCM & Random Forest & Texture information \\
+HOG + GLCM & SVM & Combined representation \\
+ResNet18 & CNN & Learned representation \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+No data augmentation was applied in any of the evaluated pipelines.
+
+All preprocessing transformations that require fitting, specifically PCA and StandardScaler, were fitted exclusively on the training partition. The learned parameters were then applied to the test partition without re-fitting. This procedure prevents information from the evaluation set from influencing the fitted preprocessing transformations.
+
+The experiments used random seed 42.
+
+\subsection{Preprocessing}
+
+Each image used by the classical machine-learning pipelines was converted to grayscale and resized to $128 \times 128$ pixels. The resulting grayscale image therefore contained 16,384 pixel intensity values.
+
+For the raw-pixel experiment, each image was flattened into a one-dimensional vector:
+
+\begin{equation}
+\mathbf{x} \in \mathbb{R}^{128 \times 128}
+\end{equation}
+
+or equivalently,
+
+\begin{equation}
+\mathbf{x} \in \mathbb{R}^{16384}.
+\end{equation}
+
+The same resized grayscale images served as the basis for the handcrafted feature extraction experiments.
+
+No additional scaling was applied to the raw-pixel or PCA pipelines.
+
+For the HOG pipeline, no additional feature scaling was applied because the L2-Hys block normalization performed internally by HOG produces normalized feature values.
+
+For the HOG+GLCM pipeline, the concatenated features were standardized using \texttt{StandardScaler}. The scaler was fitted on the training data and subsequently applied to the test data.
+
+The ResNet18 pipeline used three-channel RGB images and ImageNet normalization with channel means
+
+\begin{equation}
+(0.485,\;0.456,\;0.406)
+\end{equation}
+
+and standard deviations
+
+\begin{equation}
+(0.229,\;0.224,\;0.225).
+\end{equation}
+
+\subsection{Raw Pixel Representation}
+
+The raw-pixel representation uses the grayscale intensity of every pixel as an independent input feature.
+
+No explicit structural or texture descriptor is applied. This experiment therefore serves as a baseline for estimating how much discriminative information is available directly in the image intensities.
+
+The resulting 16,384-dimensional vectors were classified using logistic regression.
+
+\subsection{Principal Component Analysis}
+
+Principal component analysis (PCA) was evaluated as a dimensionality-reduction approach. PCA identifies orthogonal directions in feature space that explain the variance of the input data and projects the original features into a lower-dimensional space \cite{jolliffe2002principal}.
+
+For an input matrix $\mathbf{X}$, PCA can be expressed as a transformation:
+
+\begin{equation}
+\mathbf{Z} = \mathbf{X}\mathbf{W},
+\end{equation}
+
+where $\mathbf{W}$ contains the selected principal-component directions.
+
+PCA was configured using \texttt{n\_components=0.95}, retaining 95\% of the variance in the training data. The number of retained components was therefore determined automatically from the training partition.
+
+The PCA transformation was fitted exclusively on the training data and then applied to the test data. The resulting PCA representation was classified using logistic regression.
+
+\subsection{Histogram of Oriented Gradients}
+
+Histogram of Oriented Gradients (HOG) represents local image structure through distributions of gradient orientations \cite{dalal2005histograms}.
+
+For an image intensity function $I(x,y)$, horizontal and vertical gradients can be approximated as
+
+\begin{equation}
+G_x = \frac{\partial I}{\partial x},
+\qquad
+G_y = \frac{\partial I}{\partial y}.
+\end{equation}
+
+The gradient magnitude and orientation are then
+
+\begin{equation}
+M = \sqrt{G_x^2 + G_y^2},
+\end{equation}
+
+\begin{equation}
+\theta = \tan^{-1}\left(\frac{G_y}{G_x}\right).
+\end{equation}
+
+HOG was computed using the following parameters:
+
+\begin{itemize}
+    \item number of orientations: 9;
+    \item pixels per cell: $(8,8)$;
+    \item cells per block: $(2,2)$;
+    \item block normalization: L2-Hys.
+\end{itemize}
+
+For a $128 \times 128$ image, the parameters produce a $16 \times 16$ cell grid. With $2 \times 2$ cells per block, the number of overlapping blocks is
+
+\begin{equation}
+(16-2+1)^2 = 225.
+\end{equation}
+
+Each block contains $2 \times 2 \times 9 = 36$ values, producing a total feature dimensionality of
+
+\begin{equation}
+225 \times 2 \times 2 \times 9
+=
+\mathbf{8,100}.
+\end{equation}
+
+No additional feature scaling was applied after HOG extraction because L2-Hys normalization is performed within the descriptor.
+
+The resulting HOG features were classified using an SVM.
+
+\subsection{Gray-Level Co-occurrence Matrix}
+
+Gray-level co-occurrence matrices (GLCMs) describe the spatial relationship between neighboring pixel intensities. The approach originates from the statistical texture features introduced by Haralick et al. \cite{haralick1973textural}.
+
+A GLCM records the frequency with which a pixel with intensity $i$ occurs at a specified spatial relationship to a pixel with intensity $j$.
+
+Formally, a co-occurrence matrix can be represented as
+
+\begin{equation}
+P(i,j \mid d,\theta),
+\end{equation}
+
+where $d$ represents the pixel distance and $\theta$ represents the relative direction.
+
+In this study, GLCM features were computed using a pixel distance of
+
+\begin{equation}
+d=1
+\end{equation}
+
+and four directions:
+
+\begin{equation}
+\theta \in
+\{0^\circ,45^\circ,90^\circ,135^\circ\}.
+\end{equation}
+
+The co-occurrence matrices used 256 gray levels with symmetric accumulation and normalization, corresponding to \texttt{symmetric=True} and \texttt{normed=True}.
+
+Six statistical properties were extracted:
+
+\begin{enumerate}
+    \item contrast;
+    \item dissimilarity;
+    \item homogeneity;
+    \item energy;
+    \item correlation;
+    \item angular second moment (ASM).
+\end{enumerate}
+
+Because one distance and four angles were used, each property produced four values. The resulting feature vector therefore contained
+
+\begin{equation}
+6 \times 4 =
+\mathbf{24}
+\end{equation}
+
+features per image.
+
+The GLCM features were classified using a random forest.
+
+\subsection{HOG + GLCM}
+
+To investigate whether structural and texture information provide complementary information, HOG and GLCM features were concatenated into a single feature vector.
+
+The combined representation can be written as
+
+\begin{equation}
+\mathbf{z}_{combined}
+=
+[\mathbf{z}_{HOG}, \mathbf{z}_{GLCM}].
+\end{equation}
+
+The HOG descriptor contains 8,100 dimensions and the GLCM descriptor contains 24 dimensions. Therefore, the concatenated representation contains
+
+\begin{equation}
+8,100 + 24 =
+\mathbf{8,124}
+\end{equation}
+
+features per image.
+
+The combined features were standardized using \texttt{StandardScaler}. The scaler was fitted exclusively on the training partition and subsequently applied to the test partition.
+
+The standardized feature vectors were classified using an SVM.
+
+This experiment tests whether adding texture information to the structural information captured by HOG improves classification performance.
+
+\subsection{CNN / ResNet18}
+
+A ResNet18 convolutional neural network was evaluated as a learned-representation comparison.
+
+ResNet introduced residual learning, in which a layer learns a residual mapping with respect to its input rather than directly learning an unreferenced transformation \cite{he2016deep}. This allows deeper networks to be optimized more effectively.
+
+The ResNet18 model was initialized using ImageNet-pretrained weights through \texttt{ResNet18\_Weights.DEFAULT}. All convolutional and batch-normalization layers were frozen. Only the final fully connected layer was replaced and trained.
+
+The original classification layer was replaced with
+
+\begin{equation}
+\texttt{nn.Linear(512,4)},
+\end{equation}
+
+corresponding to the four target classes.
+
+Images were resized to $128 \times 128$ pixels and loaded as three-channel RGB tensors using \texttt{ImageFolder}. ImageNet normalization was applied using the channel means $(0.485,0.456,0.406)$ and standard deviations $(0.229,0.224,0.225)$.
+
+Training used the Adam optimizer with a learning rate of 0.001 and cross-entropy loss. The batch size was 32 and training was performed for 5 epochs.
+
+No learning-rate scheduler or data augmentation was used.
+
+Because only the final classification layer was trained, this experiment evaluates the performance of a linear classifier operating on the fixed representations produced by the pretrained ResNet18 backbone under the specified training configuration.
+
+\subsection{Classifiers}
+
+Three classical classifiers were used.
+
+\subsubsection{Logistic Regression}
+
+Logistic regression was used for the raw-pixel and PCA representations. It provides a relatively simple linear classification baseline and allows the effect of the input representation to be evaluated without introducing a highly complex classifier.
+
+The maximum number of iterations was set to 1,000.
+
+\subsubsection{Support Vector Machine}
+
+Support vector machines were used with HOG and HOG+GLCM representations.
+
+An SVM with a radial basis function (RBF) kernel was used with
+
+\begin{itemize}
+    \item \texttt{C=10};
+    \item \texttt{gamma=scale};
+    \item \texttt{random\_state=42}.
+\end{itemize}
+
+For \texttt{gamma=scale}, scikit-learn computes the parameter as
+
+\begin{equation}
+\gamma =
+\frac{1}
+{n_{\text{features}}\operatorname{Var}(\mathbf{X})}.
+\end{equation}
+
+Multi-class classification uses scikit-learn's default one-vs-one strategy.
+
+\subsubsection{Random Forest}
+
+A random forest classifier was used for the GLCM representation.
+
+The forest contained 100 decision trees and used the following configuration:
+
+\begin{itemize}
+    \item \texttt{n\_estimators=100};
+    \item \texttt{criterion='gini'};
+    \item \texttt{random\_state=42};
+    \item \texttt{n\_jobs=-1}.
+\end{itemize}
+
+All other hyperparameters used scikit-learn defaults, including unlimited tree depth, \texttt{min\_samples\_split=2}, and \texttt{max\_features='sqrt'}.
+
+% ---------------------------------------------------------
+% 5. Experimental Setup
+% ---------------------------------------------------------
+
+\section{Experimental Setup}
+
+All classical machine learning experiments were implemented using Python-based machine learning and image-processing libraries.
+
+The principal experimental parameters are summarized in Table~\ref{tab:experimental_setup}.
+
+\begin{table}[H]
+\centering
+\caption{Experimental configuration.}
+\label{tab:experimental_setup}
+\begin{tabular}{ll}
+\toprule
+\textbf{Parameter} & \textbf{Value} \\
+\midrule
+Dataset & Brain Tumor MRI Dataset \\
+Total images & 7,023 \\
+Training images & 5,700 \\
+Evaluation images & 1,323 \\
+Number of classes & 4 \\
+Classical image representation & Grayscale \\
+Classical image resolution & $128 \times 128$ \\
+Raw feature dimensionality & 16,384 \\
+HOG feature dimensionality & 8,100 \\
+GLCM feature dimensionality & 24 \\
+HOG+GLCM dimensionality & 8,124 \\
+Random seed & 42 \\
+PCA variance retained & 95\% \\
+Maximum LR iterations & 1,000 \\
+SVM kernel & RBF \\
+SVM $C$ & 10 \\
+Random forest trees & 100 \\
+Evaluation metrics & Accuracy, weighted precision, \\
+& weighted recall, weighted F1 \\
+Hardware & NVIDIA T4 GPU / Google Colab \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The experiments were conducted using Google Colab with an NVIDIA T4 GPU. Training and feature-extraction times were recorded separately where applicable.
+
+Accuracy was calculated as
+
+\begin{equation}
+Accuracy =
+\frac{\text{Number of correct predictions}}
+{\text{Total number of predictions}}.
+\end{equation}
+
+For multi-class classification, weighted precision, recall, and F1-score were reported. The weighted F1-score is calculated by weighting each class-specific F1-score according to its support.
+
+% ---------------------------------------------------------
+% 6. Results
+% ---------------------------------------------------------
+
+\section{Results}
+
+\subsection{Overall Performance}
+
+The results of all evaluated pipelines are shown in Table~\ref{tab:results}.
+
+\begin{table}[H]
+\centering
+\caption{Performance of evaluated classification pipelines.}
+\label{tab:results}
+\begin{tabular}{lrrrr}
+\toprule
+\textbf{Representation / Model}
+& \textbf{Accuracy}
+& \textbf{Precision}
+& \textbf{Recall}
+& \textbf{F1} \\
+\midrule
+Raw Pixels + LR
+& 0.8655
+& 0.8639
+& 0.8655
+& 0.8641 \\
+
+PCA + LR
+& 0.8670
+& 0.8649
+& 0.8670
+& 0.8656 \\
+
+GLCM + RF
+& 0.8987
+& 0.9003
+& 0.8987
+& 0.8976 \\
+
+HOG + SVM
+& \textbf{0.9705}
+& \textbf{0.9710}
+& \textbf{0.9705}
+& \textbf{0.9704} \\
+
+HOG + GLCM + SVM
+& 0.9645
+& 0.9653
+& 0.9645
+& 0.9643 \\
+
+ResNet18
+& 0.8345
+& 0.8294
+& 0.8345
+& 0.8278 \\
+
+\bottomrule
+\end{tabular}
+\end{table}
+
+HOG with an SVM achieved the highest accuracy among the evaluated configurations at 97.05\%, with a weighted F1-score of 97.04\%.
+
+GLCM with a random forest achieved 89.87\% accuracy, outperforming the raw-pixel baseline by 3.32 percentage points.
+
+PCA produced only a marginal improvement over raw pixels, increasing accuracy from 86.55\% to 86.70\%.
+
+The combined HOG+GLCM representation achieved 96.45\%, which was 0.60 percentage points lower than HOG alone.
+
+The ResNet18 configuration achieved 83.45\% accuracy and therefore performed below all of the classical machine-learning configurations evaluated in this experiment.
+
+\subsection{Per-Class Performance}
+
+The HOG+SVM classification report is summarized in Table~\ref{tab:hog_report}.
+
+\begin{table}[H]
+\centering
+\caption{Per-class performance of the HOG+SVM pipeline.}
+\label{tab:hog_report}
+\begin{tabular}{lrrrr}
+\toprule
+\textbf{Class}
+& \textbf{Precision}
+& \textbf{Recall}
+& \textbf{F1}
+& \textbf{Support} \\
+\midrule
+Glioma
+& 0.99
+& 0.92
+& 0.95
+& 300 \\
+
+Meningioma
+& 0.92
+& 0.95
+& 0.94
+& 306 \\
+
+No tumor
+& 0.99
+& 1.00
+& 1.00
+& 417 \\
+
+Pituitary
+& 0.98
+& 1.00
+& 0.99
+& 300 \\
+
+\bottomrule
+\end{tabular}
+\end{table}
+
+The HOG+SVM confusion matrix indicates that classification performance was not uniform across classes.
+
+\begin{table}[H]
+\centering
+\caption{HOG+SVM confusion matrix. Rows correspond to true classes and columns correspond to predicted classes.}
+\label{tab:hog_cm}
+\begin{tabular}{lrrrr}
+\toprule
+ & Glioma & Meningioma & No Tumor & Pituitary \\
+\midrule
+Glioma
+& 275 & 24 & 0 & 1 \\
+
+Meningioma
+& 4 & 292 & 4 & 6 \\
+
+No Tumor
+& 0 & 0 & 417 & 0 \\
+
+Pituitary
+& 0 & 0 & 0 & 300 \\
+
+\bottomrule
+\end{tabular}
+\end{table}
+
+The classification report gives recall values of 0.92 for glioma, 0.95 for meningioma, 1.00 for no tumor, and 1.00 for pituitary.
+
+Most classification errors occur between glioma and meningioma.
+
+\subsection{Confusion Matrix Analysis}
+
+Figure~\ref{fig:confusion_matrices} presents the confusion matrices for the evaluated pipelines.
+
+\begin{figure}[H]
+    \centering
+
+    \begin{subfigure}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{paper/figures/evaluation/raw_pixels_logistic_regression/confusion_matrix.png}
+        \caption{Raw Pixels + Logistic Regression}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{paper/figures/evaluation/PCA_logistic_regression/confusion_matrix.png}
+        \caption{PCA + Logistic Regression}
+    \end{subfigure}
+
+    \vspace{0.5cm}
+
+    \begin{subfigure}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{paper/figures/evaluation/glcm_rf/confusion_matrix.png}
+        \caption{GLCM + Random Forest}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{paper/figures/evaluation/hog_svm/confusion_matrix.png}
+        \caption{HOG + SVM}
+    \end{subfigure}
+
+    \vspace{0.5cm}
+
+    \begin{subfigure}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{paper/figures/evaluation/hog_glcm_svm/confusion_matrix.png}
+        \caption{HOG + GLCM + SVM}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{paper/figures/evaluation/cnn/confusion_matrix.png}
+        \caption{ResNet18}
+    \end{subfigure}
+
+    \caption{Confusion matrices for the evaluated classification pipelines.}
+    \label{fig:confusion_matrices}
+\end{figure}
+
+The confusion matrices show that the main source of error for the classical approaches is the distinction between glioma and meningioma. This effect is particularly visible in the raw-pixel and PCA experiments.
+
+In contrast, the HOG representation substantially reduces cross-class confusion. The HOG+SVM matrix contains 24 glioma samples classified as meningioma and four meningioma samples classified as glioma, with very few errors involving the no-tumor and pituitary classes.
+
+This suggests that the structural information captured by HOG was particularly useful for distinguishing the classes in this dataset. However, the confusion matrix alone does not establish that tumor morphology is the causal reason for the improved performance.
+
+\subsection{Computational Cost}
+
+Training and evaluation times were also recorded.
+
+\begin{table}[H]
+\centering
+\caption{Approximate computational cost of the evaluated pipelines.}
+\label{tab:runtime}
+\begin{tabular}{lrr}
+\toprule
+\textbf{Pipeline} & \textbf{Training / Processing} & \textbf{Evaluation} \\
+\midrule
+Raw Pixels + LR & 58 s & 2 s \\
+HOG + SVM & 3 min & 44 s \\
+GLCM + RF & 7 min 2 s & 4 s \\
+HOG + GLCM + SVM & 13 min & 1 min \\
+PCA + LR & 8 min & $\sim$0 s \\
+ResNet18 & 29 min & 8 min \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The timing measurements should be interpreted as measurements of the specific implementation and hardware environment rather than as universal computational benchmarks.
+
+HOG+SVM required approximately three minutes including HOG extraction and model training, while the HOG+GLCM pipeline required approximately thirteen minutes. GLCM extraction was also relatively expensive, accounting for approximately seven minutes of the reported GLCM pipeline time.
+
+The ResNet18 experiment required approximately 29 minutes of training and eight minutes of evaluation under the recorded configuration.
+
+% ---------------------------------------------------------
+% 7. Discussion
+% ---------------------------------------------------------
+
+\section{Discussion}
+
+The experimental results show substantial differences between the evaluated image representations.
+
+The raw-pixel baseline achieved 86.55\% accuracy. This demonstrates that grayscale intensity information alone contains useful information for the four-class classification problem. However, raw pixels do not explicitly represent spatial structures such as edges and contours.
+
+PCA produced an accuracy of 86.70\%, representing an improvement of only 0.15 percentage points over raw pixels. This small difference suggests that dimensionality reduction alone did not substantially change the discriminative information available to the logistic regression classifier in this experiment.
+
+GLCM achieved 89.87\% accuracy when paired with a random forest. Its performance above the raw-pixel baseline indicates that texture-related information is useful for the classification task. However, its performance remained substantially below HOG.
+
+The strongest result was obtained using HOG with an SVM. The pipeline achieved 97.05\% accuracy and a weighted F1-score of 97.04\%. HOG explicitly represents local gradient structure, which may provide a more useful representation for the visual characteristics present in this dataset than raw intensity or texture statistics alone.
+
+An important observation is that combining HOG and GLCM did not improve performance. Instead, accuracy decreased from 97.05\% to 96.45\%. The decrease of 0.60 percentage points indicates that the additional texture features did not provide sufficient complementary information to improve the classifier under the evaluated configuration.
+
+Several explanations are possible. The GLCM features may contain information that overlaps with information already represented by HOG, or the increased feature space may make the classification problem more difficult for the selected SVM configuration. The additional features may also require different hyperparameters or normalization strategies. The present experiment cannot distinguish between these explanations.
+
+The evaluated ResNet18 model achieved 83.45\% accuracy, which was below the classical pipelines. This result demonstrates that the specific ResNet18 configuration used in this experiment did not outperform the HOG+SVM pipeline. It should not, however, be interpreted as evidence that CNN-based methods are generally inferior to handcrafted features. CNN performance depends strongly on architecture, initialization, augmentation, optimization, training duration, hyperparameters, and dataset size.
+
+In particular, the ResNet18 experiment trained only the final fully connected layer while keeping the ImageNet-pretrained backbone frozen. Consequently, the result represents a restricted transfer-learning configuration rather than a fully fine-tuned ResNet18 model. A fine-tuned or differently optimized CNN could produce substantially different results.
+
+The computational measurements provide an additional perspective. HOG+SVM achieved the highest predictive performance while requiring substantially less recorded processing time than the HOG+GLCM and ResNet18 configurations. Therefore, within the specific experiments conducted here, HOG+SVM provided the strongest observed trade-off between classification performance and computational cost.
+
+% ---------------------------------------------------------
+% 8. Limitations
+% ---------------------------------------------------------
+
+\section{Limitations}
+
+This study has several limitations.
+
+First, the experiments were conducted using a single publicly available dataset. Performance on this dataset should therefore not be assumed to generalize to MRI scans collected at different institutions, scanners, imaging protocols, or patient populations.
+
+Second, the study evaluates a limited set of representations and models. The results do not constitute an exhaustive comparison of classical machine learning or deep learning methods.
+
+Third, the CNN comparison is based on a single ResNet18 configuration. The backbone was initialized with ImageNet-pretrained weights but kept frozen, with only the final classification layer trained for five epochs. A different architecture, fine-tuning strategy, pretrained initialization, augmentation policy, or hyperparameter configuration could produce substantially different results.
+
+Fourth, the experiments use a single random seed. Repeating the experiments over multiple train/test splits or using cross-validation would provide a better estimate of performance variability. However, because the dataset provides a predefined training/testing partition, the present experiment retained that partition rather than introducing a new random split.
+
+Fifth, the experiments do not establish clinical validity. Classification accuracy on a public dataset is not equivalent to diagnostic performance in a clinical environment, and the evaluated models should not be interpreted as clinical diagnostic systems.
+
+Sixth, the dataset combines images originating from multiple source datasets. Differences in acquisition conditions, preprocessing, and dataset construction may introduce biases or distributional characteristics that a model could exploit.
+
+Seventh, the exact number of PCA components retained was not saved in the experimental outputs. The PCA configuration is nevertheless precisely defined by its 95\% variance-retention criterion, with the number of components determined automatically from the training data.
+
+Finally, the computational timings reported in this study are specific to the implementation and Google Colab hardware configuration used. They should not be interpreted as hardware-independent measurements of algorithmic efficiency.
+
+% ---------------------------------------------------------
+% 9. Conclusion
+% ---------------------------------------------------------
+
+\section{Conclusion}
+
+This study compared several image representations and machine-learning pipelines for four-class brain MRI tumor classification.
+
+Among the evaluated configurations, HOG combined with an SVM achieved the highest classification performance, with an accuracy of 97.05\% and a weighted F1-score of 97.04\%. GLCM with a random forest achieved 89.87\%, while raw pixels and PCA with logistic regression achieved 86.55\% and 86.70\%, respectively. Combining HOG and GLCM reduced performance to 96.45\%, indicating that the additional texture features did not improve classification in the evaluated configuration.
+
+The results suggest that structural information captured by HOG was particularly useful for this dataset. The HOG+SVM pipeline also provided a favorable computational profile relative to the other high-dimensional feature pipelines evaluated.
+
+The ResNet18 model achieved 83.45\% accuracy, lower than the evaluated classical machine-learning pipelines. However, this result reflects a specific transfer-learning configuration in which the pretrained backbone was frozen and only the final classification layer was trained. It therefore does not support a general conclusion that handcrafted features outperform CNNs.
+
+Overall, the experiments demonstrate that relatively simple handcrafted representations can remain highly competitive for a constrained image-classification problem. For the dataset and experimental conditions studied here, HOG+SVM provided the strongest observed combination of predictive performance and computational cost.
+
+Future work should evaluate the robustness of this result through repeated experiments, stronger hyperparameter optimization, external datasets, patient-level splitting where metadata permits, additional CNN architectures and training strategies, and analysis of the features responsible for individual predictions.
+
+% ---------------------------------------------------------
+% 10. Reproducibility
+% ---------------------------------------------------------
+
+\section{Reproducibility}
+
+All experiments were implemented in Python. The source code, notebooks, saved results, preprocessing procedures, and model configurations are publicly available in the project repository:
+
+\begin{center}
+\url{https://github.com/Bhardwaj-16/BrainMRI-ML}
+\end{center}
+
+The reported experiments correspond to commit \texttt{0d23b85}.
+
+The repository contains or is intended to contain:
+
+\begin{itemize}
+    \item dataset preprocessing scripts;
+    \item feature extraction implementations;
+    \item model training scripts;
+    \item evaluation scripts;
+    \item confusion matrices;
+    \item experiment results;
+    \item environment and dependency information; and
+    \item the LaTeX source of this paper.
+\end{itemize}
+
+The experiments used random seed 42 and were conducted using Google Colab with an NVIDIA T4 GPU. The software environment used Python~3 together with PyTorch, scikit-learn, scikit-image, and OpenCV.
+
+The repository's \texttt{requirements.txt} file lists the required packages.
+
+For the classical machine-learning experiments, the predefined training/testing partition supplied with the dataset was retained. No programmatic train/test split was introduced.
+
+All fitted preprocessing operations, including PCA and StandardScaler, were fitted exclusively on the training partition before being applied to the evaluation partition.
+
+The exact PCA component count was not saved; PCA was configured to retain 95\% of the variance, with the number of components determined automatically during fitting.
+
+% ---------------------------------------------------------
+% References
+% ---------------------------------------------------------
+
+\bibliographystyle{plain}
+\bibliography{references}
+
+\end{document}
